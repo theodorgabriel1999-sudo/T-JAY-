@@ -15,6 +15,9 @@ final class InstallerViewModel: ObservableObject {
     @Published var currentStep = "Ready"
     @Published var currentOutput = ""
     @Published var thermalState = HardwareChecker.thermalStateDescription
+    @Published var cpuUsagePercent: Double? = nil
+    @Published var cpuAssessment = "Measuring system load…"
+    private var cpuSamples: [Double] = []
 
     let hardware = HardwareChecker.inspect()
     private let runner = SafeCommandRunner()
@@ -51,6 +54,13 @@ final class InstallerViewModel: ObservableObject {
         guard hardware.supported else { log("Blocked: unsupported system."); return }
         guard !selectedComponents.isEmpty else { log("Select at least one component."); return }
 
+        currentStep = "Checking system load before installation"
+        guard await performCPUPreflight() else {
+            currentStep = "Waiting for safer system conditions"
+            log("Preflight blocked installation. Close demanding apps, allow the Mac to cool, then retry.")
+            return
+        }
+
         runner.resetCancellation()
         isRunning = true
         cancelRequested = false
@@ -66,7 +76,7 @@ final class InstallerViewModel: ObservableObject {
         for item in selectedComponents {
             if cancelRequested { break }
             thermalState = HardwareChecker.thermalStateDescription
-            if HardwareChecker.shouldDeferNextInstallStep {
+            if HardwareChecker.shouldDeferNextInstallStep || (averageCPUUsage ?? 0) >= 90 {
                 states[item.id] = .paused("Deferred because macOS reports high thermal pressure.")
                 currentStep = "Paused for cooling"
                 log("Safety pause: \(item.name) was not started because macOS reports \(thermalState). Let the Mac cool, then retry.")
@@ -120,7 +130,55 @@ final class InstallerViewModel: ObservableObject {
         else { log("Installation queue finished.") }
     }
 
-    func refreshThermalState() { thermalState = HardwareChecker.thermalStateDescription }
+    var averageCPUUsage: Double? {
+        guard !cpuSamples.isEmpty else { return cpuUsagePercent }
+        return cpuSamples.reduce(0, +) / Double(cpuSamples.count)
+    }
+
+    func refreshThermalState() {
+        thermalState = HardwareChecker.thermalStateDescription
+        guard let sample = HardwareChecker.cpuTicks() else {
+            cpuAssessment = "CPU load unavailable"
+            return
+        }
+        if let previous = lastCPUTicks, let usage = HardwareChecker.cpuUsagePercent(from: previous, to: sample) {
+            cpuUsagePercent = usage
+            cpuSamples.append(usage)
+            if cpuSamples.count > 6 { cpuSamples.removeFirst(cpuSamples.count - 6) }
+            let average = averageCPUUsage ?? usage
+            cpuAssessment = average >= 95 ? "Critical — new work blocked" :
+                average >= 90 ? "Serious — pause before next step" :
+                average >= 80 ? "High — reduced build concurrency" :
+                average >= 60 ? "Elevated — monitoring" : "Normal"
+        }
+        lastCPUTicks = sample
+    }
+
+    private var lastCPUTicks: (total: UInt64, idle: UInt64)?
+
+    private func performCPUPreflight() async -> Bool {
+        guard let first = HardwareChecker.cpuTicks() else {
+            cpuAssessment = "CPU load unavailable — cannot verify safe start"
+            return false
+        }
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        guard let second = HardwareChecker.cpuTicks(),
+              let usage = HardwareChecker.cpuUsagePercent(from: first, to: second) else {
+            cpuAssessment = "CPU load unavailable — cannot verify safe start"
+            return false
+        }
+        cpuUsagePercent = usage
+        cpuSamples = [usage]
+        lastCPUTicks = second
+        thermalState = HardwareChecker.thermalStateDescription
+        if HardwareChecker.shouldDeferNextInstallStep || usage >= 90 {
+            cpuAssessment = usage >= 95 ? "Critical — installation blocked" : "Serious — installation blocked"
+            return false
+        }
+        cpuAssessment = usage >= 80 ? "High — cautious install profile" :
+            usage >= 60 ? "Elevated — monitoring" : "Normal"
+        return true
+    }
 
     func log(_ message: String) {
         let line = "[\(Date.now.formatted(date: .omitted, time: .standard))] \(message)"
@@ -195,6 +253,8 @@ private final class SafeCommandRunner: @unchecked Sendable {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
+        // Conservative Homebrew build parallelism: do not consume every core.
+        process.environment = ProcessInfo.processInfo.environment.merging(["HOMEBREW_MAKE_JOBS": "2"]) { _, new in new }
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
