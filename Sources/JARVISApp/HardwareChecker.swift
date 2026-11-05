@@ -38,6 +38,21 @@ enum HardwareChecker {
 
     // kern.cp_time reports cumulative CPU ticks. Comparing two samples avoids
     // interpreting a short spike as sustained system load.
+    static func estimatedAvailableMemoryGB() -> Double? {
+        guard let freePages = sysctlUInt64("vm.page_free_count"),
+              let inactivePages = sysctlUInt64("vm.page_inactive_count"),
+              let pageSize = sysctlUInt64("hw.pagesize"), pageSize > 0 else { return nil }
+        let bytes = (freePages + inactivePages) * pageSize
+        return Double(bytes) / 1_073_741_824
+    }
+
+    private static func sysctlUInt64(_ key: String) -> UInt64? {
+        var value: UInt64 = 0
+        var size = MemoryLayout<UInt64>.size
+        guard sysctlbyname(key, &value, &size, nil, 0) == 0 else { return nil }
+        return value
+    }
+
     static func cpuTicks() -> (total: UInt64, idle: UInt64)? {
         var ticks = [UInt32](repeating: 0, count: 5)
         var size = ticks.count * MemoryLayout<UInt32>.size
