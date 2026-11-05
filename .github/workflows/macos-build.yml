@@ -12,6 +12,6 @@ jobs:
       - name: Show Swift version
         run: swift --version
       - name: Validate component manifest
-        run: plutil -lint -s -r Resources/components.json || python3 -m json.tool Resources/components.json >/dev/null
+        run: python3 -m json.tool Resources/components.json >/dev/null
       - name: Build
         run: swift build -c release
