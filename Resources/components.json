@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "productVersion": "1.0.0",
+  "productVersion": "1.0.2",
   "components": [
     {
       "id": "ollama",
       "name": "Ollama",
-      "summary": "Run and manage local language models on your Mac.",
+      "summary": "Run and manage local language models on your Mac. Existing official-app and Homebrew installations are detected and reused; Homebrew may compile dependencies if installation is needed.",
       "category": "Local AI runtime",
       "recommended": true,
       "requiresHomebrew": true,
