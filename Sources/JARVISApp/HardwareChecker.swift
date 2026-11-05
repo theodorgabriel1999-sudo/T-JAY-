@@ -7,7 +7,7 @@ enum HardwareChecker {
         let chip = sysctlString("machdep.cpu.brand_string") ?? arch
         let memory = Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
         let v = ProcessInfo.processInfo.operatingSystemVersion
-        let version = "\\(v.majorVersion).\\(v.minorVersion).\\(v.patchVersion)"
+        let version = "\(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
         let home = URL(fileURLWithPath: NSHomeDirectory())
         let values = try? home.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         let free = max(0, (values?.volumeAvailableCapacityForImportantUsage ?? 0) / 1_073_741_824)
