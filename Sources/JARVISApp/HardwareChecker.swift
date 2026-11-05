@@ -38,28 +38,50 @@ enum HardwareChecker {
 
     // kern.cp_time reports cumulative CPU ticks. Comparing two samples avoids
     // interpreting a short spike as sustained system load.
+    // Use Mach host statistics: these interfaces are available on macOS,
+    // unlike several historical vm.* and kern.* sysctl names.
     static func estimatedAvailableMemoryGB() -> Double? {
-        guard let freePages = sysctlUInt64("vm.page_free_count"),
-              let inactivePages = sysctlUInt64("vm.page_inactive_count"),
-              getpagesize() > 0 else { return nil }
-        let pageSize = UInt64(getpagesize())
-        let bytes = (freePages + inactivePages) * pageSize
-        return Double(bytes) / 1_073_741_824
-    }
+        var statistics = vm_statistics64_data_t()
+        var count = mach_msg_type_number_t(
+            MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size
+        )
+        let result = withUnsafeMutablePointer(to: &statistics) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
 
-    private static func sysctlUInt64(_ key: String) -> UInt64? {
-        var value: UInt64 = 0
-        var size = MemoryLayout<UInt64>.size
-        guard sysctlbyname(key, &value, &size, nil, 0) == 0 else { return nil }
-        return value
+        var pageSize: vm_size_t = 0
+        guard host_page_size(mach_host_self(), &pageSize) == KERN_SUCCESS, pageSize > 0 else {
+            return nil
+        }
+
+        // Free + inactive + speculative pages are available/reclaimable memory,
+        // not a promise that every byte can be used without compression or swap.
+        let pages = UInt64(statistics.free_count)
+            + UInt64(statistics.inactive_count)
+            + UInt64(statistics.speculative_count)
+        return Double(pages * UInt64(pageSize)) / 1_073_741_824
     }
 
     static func cpuTicks() -> (total: UInt64, idle: UInt64)? {
-        var ticks = [UInt64](repeating: 0, count: 5)
-        var size = ticks.count * MemoryLayout<UInt64>.size
-        let result = sysctlbyname("kern.cp_time", &ticks, &size, nil, 0)
-        guard result == 0, size >= 5 * MemoryLayout<UInt64>.size else { return nil }
-        return (ticks.reduce(0, &+), ticks[4])
+        var statistics = host_cpu_load_info_data_t()
+        var count = mach_msg_type_number_t(
+            MemoryLayout<host_cpu_load_info_data_t>.size / MemoryLayout<integer_t>.size
+        )
+        let result = withUnsafeMutablePointer(to: &statistics) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+
+        let user = UInt64(statistics.cpu_ticks.0)
+        let system = UInt64(statistics.cpu_ticks.1)
+        let idle = UInt64(statistics.cpu_ticks.2)
+        let nice = UInt64(statistics.cpu_ticks.3)
+        return (user + system + idle + nice, idle)
     }
 
     static func cpuUsagePercent(from old: (total: UInt64, idle: UInt64),
