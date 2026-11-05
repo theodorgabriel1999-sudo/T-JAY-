@@ -84,20 +84,24 @@ final class InstallerViewModel: ObservableObject {
             states[item.id] = .installing
             currentStep = "Installing \(item.name) — waiting for package manager"
             log("Starting \(item.name). Output will appear below as the process emits it.")
+            let componentName = item.name
+            let viewModel = self
             do {
-                let result = try await runner.run(item.executable, item.arguments) { [weak self] chunk in
-                    Task { @MainActor in
-                        guard let self else { return }
-                        self.currentStep = "Installing \(item.name)"
-                        self.currentOutput = String((self.currentOutput + chunk).suffix(5000))
-                        self.log(chunk.trimmingCharacters(in: .whitespacesAndNewlines))
+                let result = try await runner.run(item.executable, item.arguments) { [weak viewModel] chunk in
+                    Task { @MainActor [weak viewModel] in
+                        guard let viewModel else { return }
+                        viewModel.currentStep = "Installing \(componentName)"
+                        viewModel.currentOutput = String((viewModel.currentOutput + chunk).suffix(5000))
+                        viewModel.log(chunk.trimmingCharacters(in: .whitespacesAndNewlines))
                     }
                 }
                 if !result.isEmpty { log(result) }
                 if cancelRequested { break }
                 currentStep = "Verifying \(item.name)"
-                let verification = try await runner.run(item.verificationExecutable, item.verificationArguments) { [weak self] chunk in
-                    Task { @MainActor in self?.log(chunk.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                let verification = try await runner.run(item.verificationExecutable, item.verificationArguments) { [weak viewModel] chunk in
+                    Task { @MainActor [weak viewModel] in
+                        viewModel?.log(chunk.trimmingCharacters(in: .whitespacesAndNewlines))
+                    }
                 }
                 states[item.id] = .succeeded
                 log("\(item.name) verified: \(verification)")
@@ -128,12 +132,33 @@ final class InstallerViewModel: ObservableObject {
         let file = dir.appendingPathComponent("installer.log")
         let data = (line + "\n").data(using: .utf8)!
         if FileManager.default.fileExists(atPath: file.path), let handle = try? FileHandle(forWritingTo: file) {
-            try? handle.seekToEnd(); try? handle.write(contentsOf: data); try? handle.close()
+            _ = try? handle.seekToEnd()
+            _ = try? handle.write(contentsOf: data)
+            _ = try? handle.close()
         } else { try? data.write(to: file) }
     }
 }
 
-private final class SafeCommandRunner {
+// Mutable state shared with the pipe callback is isolated behind synchronous lock methods.
+private final class LockedOutput: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+
+    func append(_ newData: Data) {
+        lock.lock()
+        data.append(newData)
+        lock.unlock()
+    }
+
+    func snapshot() -> Data {
+        lock.lock()
+        let copy = data
+        lock.unlock()
+        return copy
+    }
+}
+
+private final class SafeCommandRunner: @unchecked Sendable {
     private let lock = NSLock()
     private var activeProcess: Process?
     private var cancellationRequested = false
@@ -158,57 +183,64 @@ private final class SafeCommandRunner {
     func run(_ executable: String, _ arguments: [String],
              onOutput: @escaping @Sendable (String) -> Void) async throws -> String {
         try await Task.detached(priority: .utility) { [self] in
-            guard executable == "/opt/homebrew/bin/brew" else { throw RunnerError.disallowed }
-            guard FileManager.default.isExecutableFile(atPath: executable) else { throw RunnerError.missing }
+            try runSynchronously(executable, arguments, onOutput: onOutput)
+        }.value
+    }
 
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: executable)
-            process.arguments = arguments
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = pipe
+    private func runSynchronously(_ executable: String, _ arguments: [String],
+                                  onOutput: @escaping @Sendable (String) -> Void) throws -> String {
+        guard executable == "/opt/homebrew/bin/brew" else { throw RunnerError.disallowed }
+        guard FileManager.default.isExecutableFile(atPath: executable) else { throw RunnerError.missing }
 
-            lock.lock()
-            activeProcess = process
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        let captured = LockedOutput()
+
+        pipe.fileHandleForReading.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else { return }
+            captured.append(chunk)
+            if let text = String(data: chunk, encoding: .utf8), !text.isEmpty {
+                onOutput(text)
+            }
+        }
+
+        // Launch while holding the lock so cancel() cannot slip between registration and launch.
+        lock.lock()
+        if cancellationRequested {
             lock.unlock()
-
-            let outputLock = NSLock()
-            var captured = Data()
-            pipe.fileHandleForReading.readabilityHandler = { handle in
-                let data = handle.availableData
-                guard !data.isEmpty else { return }
-                outputLock.lock()
-                captured.append(data)
-                outputLock.unlock()
-                if let text = String(data: data, encoding: .utf8), !text.isEmpty { onOutput(text) }
-            }
-
-            do {
-                try process.run()
-                process.waitUntilExit()
-            } catch {
-                pipe.fileHandleForReading.readabilityHandler = nil
-                lock.lock(); activeProcess = nil; lock.unlock()
-                throw error
-            }
-
             pipe.fileHandleForReading.readabilityHandler = nil
-            let tail = pipe.fileHandleForReading.readDataToEndOfFile()
-            outputLock.lock()
-            if !tail.isEmpty { captured.append(tail) }
-            let data = captured
-            outputLock.unlock()
-
-            lock.lock()
-            let wasCancelled = cancellationRequested
+            throw RunnerError.cancelled
+        }
+        activeProcess = process
+        do {
+            try process.run()
+        } catch {
             activeProcess = nil
             lock.unlock()
+            pipe.fileHandleForReading.readabilityHandler = nil
+            throw error
+        }
+        lock.unlock()
 
-            if wasCancelled { throw RunnerError.cancelled }
-            let output = String(data: data, encoding: .utf8) ?? ""
-            guard process.terminationStatus == 0 else { throw RunnerError.failed(output) }
-            return output.trimmingCharacters(in: .whitespacesAndNewlines)
-        }.value
+        process.waitUntilExit()
+        pipe.fileHandleForReading.readabilityHandler = nil
+        let tail = pipe.fileHandleForReading.readDataToEndOfFile()
+        if !tail.isEmpty { captured.append(tail) }
+
+        lock.lock()
+        let wasCancelled = cancellationRequested
+        activeProcess = nil
+        lock.unlock()
+
+        if wasCancelled { throw RunnerError.cancelled }
+        let output = String(data: captured.snapshot(), encoding: .utf8) ?? ""
+        guard process.terminationStatus == 0 else { throw RunnerError.failed(output) }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     enum RunnerError: LocalizedError {
