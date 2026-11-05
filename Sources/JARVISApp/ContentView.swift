@@ -29,6 +29,8 @@ struct ContentView: View {
                             Label("Thermal state: \(vm.thermalState)",
                                   systemImage: vm.thermalState == "Normal" ? "thermometer.medium" : "thermometer.high")
                                 .foregroundColor(vm.thermalState == "Normal" ? Color.secondary : Color.orange)
+                            Label("CPU load: \\(vm.cpuUsagePercent.map { String(format: "%.0f%%", $0) } ?? "Measuring…")", systemImage: "cpu")
+                            Text(vm.cpuAssessment).font(.caption).foregroundStyle(vm.cpuAssessment.contains("Critical") || vm.cpuAssessment.contains("Serious") ? Color.red : Color.secondary)
                             if HardwareChecker.shouldDeferNextInstallStep {
                                 Text("JARVIS will not start another installation step while thermal pressure is high.")
                                     .font(.caption).foregroundStyle(.orange)
