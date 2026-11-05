@@ -30,7 +30,8 @@ struct ContentView: View {
                                   systemImage: vm.thermalState == "Normal" ? "thermometer.medium" : "thermometer.high")
                                 .foregroundColor(vm.thermalState == "Normal" ? Color.secondary : Color.orange)
                             Label("CPU load: \\(vm.cpuUsagePercent.map { String(format: "%.0f%%", $0) } ?? "Measuring…")", systemImage: "cpu")
-                            Text(vm.cpuAssessment).font(.caption).foregroundStyle(vm.cpuAssessment.contains("Critical") || vm.cpuAssessment.contains("Serious") ? Color.red : Color.secondary)
+                            Text(vm.cpuAssessment).font(.caption).foregroundStyle(vm.cpuAssessment.contains("Critical") || vm.cpuAssessment.contains("Serious") || vm.cpuAssessment.contains("blocked") ? Color.red : Color.secondary)
+                            Label("Estimated available memory: \\(vm.availableMemoryGB.map { String(format: "%.1f GB", $0) } ?? "Unavailable")", systemImage: "memorychip")
                             if HardwareChecker.shouldDeferNextInstallStep {
                                 Text("JARVIS will not start another installation step while thermal pressure is high.")
                                     .font(.caption).foregroundStyle(.orange)
