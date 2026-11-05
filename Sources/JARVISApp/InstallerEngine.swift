@@ -17,6 +17,7 @@ final class InstallerViewModel: ObservableObject {
     @Published var thermalState = HardwareChecker.thermalStateDescription
     @Published var cpuUsagePercent: Double? = nil
     @Published var cpuAssessment = "Measuring system load…"
+    @Published var availableMemoryGB: Double? = HardwareChecker.estimatedAvailableMemoryGB()
     private var cpuSamples: [Double] = []
 
     let hardware = HardwareChecker.inspect()
@@ -76,8 +77,9 @@ final class InstallerViewModel: ObservableObject {
         for item in selectedComponents {
             if cancelRequested { break }
             thermalState = HardwareChecker.thermalStateDescription
-            if HardwareChecker.shouldDeferNextInstallStep || (averageCPUUsage ?? 0) >= 90 {
-                states[item.id] = .paused("Deferred because macOS reports high thermal pressure.")
+            availableMemoryGB = HardwareChecker.estimatedAvailableMemoryGB()
+            if HardwareChecker.shouldDeferNextInstallStep || (averageCPUUsage ?? 0) >= 90 || (availableMemoryGB ?? 0) < 1.5 {
+                states[item.id] = .paused("Deferred because system load, memory availability or thermal pressure is high.")
                 currentStep = "Paused for cooling"
                 log("Safety pause: \(item.name) was not started because macOS reports \(thermalState). Let the Mac cool, then retry.")
                 break
@@ -137,6 +139,7 @@ final class InstallerViewModel: ObservableObject {
 
     func refreshThermalState() {
         thermalState = HardwareChecker.thermalStateDescription
+        availableMemoryGB = HardwareChecker.estimatedAvailableMemoryGB()
         guard let sample = HardwareChecker.cpuTicks() else {
             cpuAssessment = "CPU load unavailable"
             return
@@ -168,11 +171,12 @@ final class InstallerViewModel: ObservableObject {
             return false
         }
         cpuUsagePercent = usage
+        availableMemoryGB = HardwareChecker.estimatedAvailableMemoryGB()
         cpuSamples = [usage]
         lastCPUTicks = second
         thermalState = HardwareChecker.thermalStateDescription
-        if HardwareChecker.shouldDeferNextInstallStep || usage >= 90 {
-            cpuAssessment = usage >= 95 ? "Critical — installation blocked" : "Serious — installation blocked"
+        if HardwareChecker.shouldDeferNextInstallStep || usage >= 90 || (availableMemoryGB ?? 0) < 1.5 {
+            cpuAssessment = usage >= 95 ? "Critical — installation blocked" : (availableMemoryGB ?? 0) < 1.5 ? "Low available memory — installation blocked" : "Serious — installation blocked"
             return false
         }
         cpuAssessment = usage >= 80 ? "High — cautious install profile" :
