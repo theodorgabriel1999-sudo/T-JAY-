@@ -51,6 +51,7 @@ final class InstallerViewModel: ObservableObject {
         guard hardware.supported else { log("Blocked: unsupported system."); return }
         guard !selectedComponents.isEmpty else { log("Select at least one component."); return }
 
+        runner.resetCancellation()
         isRunning = true
         cancelRequested = false
         currentOutput = ""
@@ -168,7 +169,6 @@ private final class SafeCommandRunner {
             process.standardError = pipe
 
             lock.lock()
-            cancellationRequested = false
             activeProcess = process
             lock.unlock()
 
