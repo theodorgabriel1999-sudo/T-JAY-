@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "productVersion": "1.0.0",
+  "components": [
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "summary": "Run and manage local language models on your Mac.",
+      "category": "Local AI runtime",
+      "recommended": true,
+      "requiresHomebrew": true,
+      "minimumMacOS": "14",
+      "executable": "/opt/homebrew/bin/brew",
+      "arguments": ["install", "ollama"],
+      "verificationExecutable": "/opt/homebrew/bin/brew",
+      "verificationArguments": ["list", "--versions", "ollama"],
+      "license": "MIT (project); review dependencies",
+      "sourceURL": "https://ollama.com"
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "summary": "Version control for AI projects and developer workflows.",
+      "category": "Developer tools",
+      "recommended": false,
+      "requiresHomebrew": true,
+      "minimumMacOS": "14",
+      "executable": "/opt/homebrew/bin/brew",
+      "arguments": ["install", "git"],
+      "verificationExecutable": "/opt/homebrew/bin/brew",
+      "verificationArguments": ["list", "--versions", "git"],
+      "license": "GPL-2.0-or-later",
+      "sourceURL": "https://git-scm.com"
+    }
+  ]
+}
