@@ -87,6 +87,28 @@ final class InstallerViewModel: ObservableObject {
 
             states[item.id] = .checking
             currentStep = "Checking \(item.name)"
+
+            // Ollama can be installed either by its official macOS app installer
+            // or by Homebrew. Prefer an existing executable and never reinstall it.
+            if item.id == "ollama", let ollamaPath = existingOllamaExecutable() {
+                states[item.id] = .installing
+                currentStep = "Verifying existing Ollama installation"
+                log("Found existing Ollama at \(ollamaPath); skipping package installation.")
+                do {
+                    let version = try await runner.run(ollamaPath, ["--version"]) { [weak viewModel = self] chunk in
+                        Task { @MainActor [weak viewModel] in
+                            viewModel?.log(chunk.trimmingCharacters(in: .whitespacesAndNewlines))
+                        }
+                    }
+                    states[item.id] = .succeeded
+                    log("Existing Ollama verified: \(version)")
+                } catch {
+                    states[item.id] = .failed("Ollama was found at \(ollamaPath), but version verification failed: \(error.localizedDescription)")
+                    log("Ollama verification failed; no reinstall was attempted.")
+                }
+                continue
+            }
+
             if item.requiresHomebrew && !runner.executableExists("/opt/homebrew/bin/brew") {
                 states[item.id] = .failed("Homebrew missing at /opt/homebrew/bin/brew.")
                 log("\(item.name): install Homebrew separately, then retry.")
@@ -130,6 +152,11 @@ final class InstallerViewModel: ObservableObject {
 
         if cancelRequested { log("Queue cancelled. No further components will be started.") }
         else { log("Installation queue finished.") }
+    }
+
+    private func existingOllamaExecutable() -> String? {
+        ["/usr/local/bin/ollama", "/opt/homebrew/bin/ollama"]
+            .first(where: { FileManager.default.isExecutableFile(atPath: $0) })
     }
 
     var averageCPUUsage: Double? {
@@ -251,7 +278,12 @@ private final class SafeCommandRunner: @unchecked Sendable {
 
     private func runSynchronously(_ executable: String, _ arguments: [String],
                                   onOutput: @escaping @Sendable (String) -> Void) throws -> String {
-        guard executable == "/opt/homebrew/bin/brew" else { throw RunnerError.disallowed }
+        let allowedExecutables: Set<String> = [
+            "/opt/homebrew/bin/brew",
+            "/usr/local/bin/ollama",
+            "/opt/homebrew/bin/ollama"
+        ]
+        guard allowedExecutables.contains(executable) else { throw RunnerError.disallowed }
         guard FileManager.default.isExecutableFile(atPath: executable) else { throw RunnerError.missing }
 
         let process = Process()
