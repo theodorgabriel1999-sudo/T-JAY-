@@ -41,7 +41,8 @@ enum HardwareChecker {
     static func estimatedAvailableMemoryGB() -> Double? {
         guard let freePages = sysctlUInt64("vm.page_free_count"),
               let inactivePages = sysctlUInt64("vm.page_inactive_count"),
-              let pageSize = sysctlUInt64("hw.pagesize"), pageSize > 0 else { return nil }
+              getpagesize() > 0 else { return nil }
+        let pageSize = UInt64(getpagesize())
         let bytes = (freePages + inactivePages) * pageSize
         return Double(bytes) / 1_073_741_824
     }
@@ -54,12 +55,11 @@ enum HardwareChecker {
     }
 
     static func cpuTicks() -> (total: UInt64, idle: UInt64)? {
-        var ticks = [UInt32](repeating: 0, count: 5)
-        var size = ticks.count * MemoryLayout<UInt32>.size
+        var ticks = [UInt64](repeating: 0, count: 5)
+        var size = ticks.count * MemoryLayout<UInt64>.size
         let result = sysctlbyname("kern.cp_time", &ticks, &size, nil, 0)
-        guard result == 0, size >= 5 * MemoryLayout<UInt32>.size else { return nil }
-        let values = ticks.map(UInt64.init)
-        return (values.reduce(0, &+), values[4])
+        guard result == 0, size >= 5 * MemoryLayout<UInt64>.size else { return nil }
+        return (ticks.reduce(0, &+), ticks[4])
     }
 
     static func cpuUsagePercent(from old: (total: UInt64, idle: UInt64),
