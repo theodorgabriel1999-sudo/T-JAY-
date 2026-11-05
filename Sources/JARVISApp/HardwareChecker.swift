@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+
 enum HardwareChecker {
     static func inspect() -> HardwareReport {
         let arch = Self.sysctlString("hw.machine") ?? "unknown"
@@ -19,6 +20,22 @@ enum HardwareChecker {
         return HardwareReport(chip: chip, architecture: arch, memoryGB: memory,
             macOS: version, freeDiskGB: Int(free), supported: supported, notes: notes)
     }
+
+    static var thermalStateDescription: String {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: return "Normal"
+        case .fair: return "Warm"
+        case .serious: return "High thermal pressure"
+        case .critical: return "Critical thermal pressure"
+        @unknown default: return "Unknown"
+        }
+    }
+
+    static var shouldDeferNextInstallStep: Bool {
+        let state = ProcessInfo.processInfo.thermalState
+        return state == .serious || state == .critical
+    }
+
     private static func sysctlString(_ key: String) -> String? {
         var size = 0
         guard sysctlbyname(key, nil, &size, nil, 0) == 0, size > 0 else { return nil }

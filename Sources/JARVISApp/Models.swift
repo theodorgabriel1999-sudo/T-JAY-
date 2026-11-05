@@ -1,9 +1,11 @@
 import Foundation
+
 struct ComponentManifest: Decodable {
     let schemaVersion: Int
     let productVersion: String
     let components: [Component]
 }
+
 struct Component: Decodable, Identifiable, Hashable {
     let id, name, summary, category: String
     let recommended, requiresHomebrew: Bool
@@ -14,9 +16,11 @@ struct Component: Decodable, Identifiable, Hashable {
     let license: String
     let sourceURL: URL
 }
+
 enum InstallState: Equatable {
-    case idle, checking, installing, succeeded, failed(String)
+    case idle, checking, installing, succeeded, paused(String), failed(String)
 }
+
 struct HardwareReport {
     let chip, architecture: String
     let memoryGB: Int
