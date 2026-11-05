@@ -15,12 +15,3 @@ jobs:
         run: python3 -m json.tool Resources/components.json >/dev/null
       - name: Build release executable
         run: swift build -c release
-      - name: Package and verify DMG
-        run: bash scripts/build-dmg.sh
-      - name: Upload development DMG
-        uses: actions/upload-artifact@v4
-        with:
-          name: JARVIS-AI-Workstation-1.0.2-macos-arm64
-          path: dist/JARVIS-AI-Workstation-1.0.2.dmg
-          if-no-files-found: error
-          retention-days: 14
