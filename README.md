@@ -18,8 +18,8 @@ git clone https://github.com/theodorgabriel1999-sudo/T-JAY-.git
 cd T-JAY-
 swift build
 swift run
-./scripts/build-app.sh
-./scripts/build-dmg.sh
+bash scripts/build-app.sh
+bash scripts/build-dmg.sh
 ```
 
 DMG output: `dist/JARVIS-AI-Workstation-1.0.0.dmg`.
