@@ -78,7 +78,7 @@ final class InstallerViewModel: ObservableObject {
             if cancelRequested { break }
             thermalState = HardwareChecker.thermalStateDescription
             availableMemoryGB = HardwareChecker.estimatedAvailableMemoryGB()
-            if HardwareChecker.shouldDeferNextInstallStep || (averageCPUUsage ?? 0) >= 90 || (availableMemoryGB ?? 0) < 1.5 {
+            if HardwareChecker.shouldDeferNextInstallStep || (averageCPUUsage ?? 0) >= 90 || (availableMemoryGB.map { $0 < 1.5 } ?? false) {
                 states[item.id] = .paused("Deferred because system load, memory availability or thermal pressure is high.")
                 currentStep = "Paused for cooling"
                 log("Safety pause: \(item.name) was not started because macOS reports \(thermalState). Let the Mac cool, then retry.")
@@ -176,7 +176,7 @@ final class InstallerViewModel: ObservableObject {
         lastCPUTicks = second
         thermalState = HardwareChecker.thermalStateDescription
         if HardwareChecker.shouldDeferNextInstallStep || usage >= 90 || (availableMemoryGB ?? 0) < 1.5 {
-            cpuAssessment = usage >= 95 ? "Critical — installation blocked" : (availableMemoryGB ?? 0) < 1.5 ? "Low available memory — installation blocked" : "Serious — installation blocked"
+            cpuAssessment = usage >= 95 ? "Critical — installation blocked" : (availableMemoryGB.map { $0 < 1.5 } ?? false) ? "Low available memory — installation blocked" : "Serious — installation blocked"
             return false
         }
         cpuAssessment = usage >= 80 ? "High — cautious install profile" :
