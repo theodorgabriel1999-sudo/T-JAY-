@@ -3,11 +3,11 @@ import Darwin
 
 enum HardwareChecker {
     static func inspect() -> HardwareReport {
-        let arch = Self.sysctlString("hw.machine") ?? "unknown"
-        let chip = Self.sysctlString("machdep.cpu.brand_string") ?? arch
+        let arch = sysctlString("hw.machine") ?? "unknown"
+        let chip = sysctlString("machdep.cpu.brand_string") ?? arch
         let memory = Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
         let v = ProcessInfo.processInfo.operatingSystemVersion
-        let version = "\(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
+        let version = "\\(v.majorVersion).\\(v.minorVersion).\\(v.patchVersion)"
         let home = URL(fileURLWithPath: NSHomeDirectory())
         let values = try? home.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         let free = max(0, (values?.volumeAvailableCapacityForImportantUsage ?? 0) / 1_073_741_824)
@@ -34,6 +34,25 @@ enum HardwareChecker {
     static var shouldDeferNextInstallStep: Bool {
         let state = ProcessInfo.processInfo.thermalState
         return state == .serious || state == .critical
+    }
+
+    // kern.cp_time reports cumulative CPU ticks. Comparing two samples avoids
+    // interpreting a short spike as sustained system load.
+    static func cpuTicks() -> (total: UInt64, idle: UInt64)? {
+        var ticks = [UInt32](repeating: 0, count: 5)
+        var size = ticks.count * MemoryLayout<UInt32>.size
+        let result = sysctlbyname("kern.cp_time", &ticks, &size, nil, 0)
+        guard result == 0, size >= 5 * MemoryLayout<UInt32>.size else { return nil }
+        let values = ticks.map(UInt64.init)
+        return (values.reduce(0, &+), values[4])
+    }
+
+    static func cpuUsagePercent(from old: (total: UInt64, idle: UInt64),
+                                to new: (total: UInt64, idle: UInt64)) -> Double? {
+        guard new.total > old.total else { return nil }
+        let totalDelta = new.total - old.total
+        let idleDelta = new.idle >= old.idle ? new.idle - old.idle : 0
+        return min(100, max(0, 100 * Double(totalDelta - min(totalDelta, idleDelta)) / Double(totalDelta)))
     }
 
     private static func sysctlString(_ key: String) -> String? {
