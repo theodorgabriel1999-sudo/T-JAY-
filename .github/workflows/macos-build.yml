@@ -1,7 +1,7 @@
-name: macOS build
+name: macOS build validation
 on:
   push:
-    branches: [main]
+    branches: [main, reliability-1.0.1, reliability-1.0.2]
   pull_request:
     branches: [main]
 jobs:
@@ -9,9 +9,18 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Show Swift version
+      - name: Select Swift toolchain
         run: swift --version
       - name: Validate component manifest
         run: python3 -m json.tool Resources/components.json >/dev/null
-      - name: Build
+      - name: Build release executable
         run: swift build -c release
+      - name: Package and verify DMG
+        run: bash scripts/build-dmg.sh
+      - name: Upload development DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-AI-Workstation-1.0.2-macos-arm64
+          path: dist/JARVIS-AI-Workstation-1.0.2.dmg
+          if-no-files-found: error
+          retention-days: 14
