@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 step() { printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$1"; }
-step "JARVIS 1.0.1 DMG build started"
+step "JARVIS 1.0.2 DMG build started"
 bash scripts/build-app.sh
 APP="build/JARVIS AI Workstation.app"
 if [[ ! -d "$APP" || ! -x "$APP/Contents/MacOS/JARVISAIWorkstation" ]]; then
@@ -22,7 +22,7 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
-DMG="dist/JARVIS-AI-Workstation-1.0.1.dmg"
+DMG="dist/JARVIS-AI-Workstation-1.0.2.dmg"
 rm -f "$DMG"
 step "Creating compressed disk image"
 hdiutil create -volname "JARVIS AI Workstation" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
