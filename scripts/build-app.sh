@@ -4,9 +4,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 APP="build/JARVIS AI Workstation.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swift build -c release
 cp ".build/release/JARVISAIWorkstation" "$APP/Contents/MacOS/JARVISAIWorkstation"
+cp "Resources/components.json" "$APP/Contents/Resources/components.json"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
