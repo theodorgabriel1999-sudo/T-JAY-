@@ -120,3 +120,72 @@ final class ProjectSetupStore: ObservableObject {
         UserDefaults.standard.set(data, forKey: storageKey)
     }
 }
+
+
+enum ProjectSourceInstaller {
+    enum InstallError: LocalizedError {
+        case unsupportedSource
+        case invalidCommit
+        case destinationExists
+        case commandFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .unsupportedSource: return "Only HTTPS GitHub repositories are supported by this source downloader."
+            case .invalidCommit: return "The catalogue does not contain a valid 40-character commit pin."
+            case .destinationExists: return "A project folder already exists at the destination. Remove or back it up before downloading again."
+            case .commandFailed(let output): return output.isEmpty ? "Git could not complete the source download." : output
+            }
+        }
+    }
+
+    static func downloadPinnedSource(for project: AIProject) async throws -> URL {
+        guard project.source.scheme?.lowercased() == "https",
+              project.source.host?.lowercased() == "github.com" else {
+            throw InstallError.unsupportedSource
+        }
+        guard let commit = project.pinnedCommit,
+              commit.range(of: "^[0-9a-fA-F]{40}$", options: .regularExpression) != nil else {
+            throw InstallError.invalidCommit
+        }
+
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let root = support.appendingPathComponent("JARVIS AI Workstation/Projects", isDirectory: true)
+        let destination = root.appendingPathComponent(project.id, isDirectory: true)
+        guard !FileManager.default.fileExists(atPath: destination.path) else {
+            throw InstallError.destinationExists
+        }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        return try await Task.detached(priority: .utility) {
+            do {
+                try runGit(["clone", "--filter=blob:none", "--no-checkout", project.source.absoluteString, destination.path])
+                try runGit(["-C", destination.path, "checkout", "--detach", commit])
+                return destination
+            } catch {
+                try? FileManager.default.removeItem(at: destination)
+                throw error
+            }
+        }.value
+    }
+
+    private static func runGit(_ arguments: [String]) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        do {
+            try process.run()
+        } catch {
+            throw InstallError.commandFailed("Could not start /usr/bin/git: \(error.localizedDescription)")
+        }
+        let output = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            let message = String(data: output, encoding: .utf8) ?? "Git exited with status \(process.terminationStatus)."
+            throw InstallError.commandFailed(message.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+    }
+}
