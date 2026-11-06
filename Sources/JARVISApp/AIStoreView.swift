@@ -43,7 +43,7 @@ struct AIStoreView: View {
                 project.name.localizedCaseInsensitiveContains(searchText) ||
                 project.summary.localizedCaseInsensitiveContains(searchText) ||
                 project.capabilities.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.stagedIDs.contains(project.id)
+            let matchesSection = section != .myAI || project.isKnownInstalled || project.isSourceCheckedOut || setupStore.stagedIDs.contains(project.id)
             return matchesCategory && matchesSearch && matchesSection
         }
     }
@@ -119,7 +119,7 @@ struct AIStoreView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header(eyebrow: "YOUR WORKSTATION", title: "My AI",
                        subtitle: "Your installed and selected projects, each with its own UI and environment.")
-                if setupStore.stagedIDs.isEmpty && projects.filter(\.isKnownInstalled).isEmpty {
+                if setupStore.stagedIDs.isEmpty && projects.filter({ $0.isKnownInstalled || $0.isSourceCheckedOut }).isEmpty {
                     ContentUnavailableView("Nothing added yet", systemImage: "square.grid.2x2",
                                             description: Text("Explore Discover and add projects to your setup list."))
                 } else {
@@ -285,6 +285,7 @@ struct AIStoreView: View {
                     detailRow("Upstream version", project.upstreamVersion ?? "Not pinned")
                     detailRow("Pinned commit", project.pinnedCommit.map { String($0.prefix(12)) } ?? "Not pinned")
                     detailRow("Verified", project.verifiedAt ?? "Not recorded")
+                    if let localSource = project.localSourceDirectory { detailRow("Local source", localSource.path) }
                     detailRow("Dependencies", project.dependencies.joined(separator: ", ").isEmpty ? "None listed" : project.dependencies.joined(separator: ", "))
                     if let optional = project.optionalDependencies, !optional.isEmpty {
                         detailRow("Optional", optional.joined(separator: ", "))
@@ -348,7 +349,7 @@ struct AIStoreView: View {
     }
 
     private func statusLabel(_ project: AIProject) -> some View {
-        let label = project.isKnownInstalled ? "Detected" : (setupStore.stagedIDs.contains(project.id) ? "In setup list" : "Available")
+        let label = project.isKnownInstalled ? "Detected" : (project.isSourceCheckedOut ? "Source downloaded" : (setupStore.stagedIDs.contains(project.id) ? "In setup list" : "Available"))
         return Text(label).font(.caption2.weight(.semibold))
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(.quaternary, in: Capsule())
