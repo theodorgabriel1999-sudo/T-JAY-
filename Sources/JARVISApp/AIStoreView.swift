@@ -43,7 +43,7 @@ struct AIStoreView: View {
                 project.name.localizedCaseInsensitiveContains(searchText) ||
                 project.summary.localizedCaseInsensitiveContains(searchText) ||
                 project.capabilities.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.setupStore.stagedIDs.contains(project.id)
+            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.stagedIDs.contains(project.id)
             return matchesCategory && matchesSearch && matchesSection
         }
     }
@@ -290,7 +290,7 @@ struct AIStoreView: View {
             }
             Spacer(minLength: 4)
             HStack {
-                Button(setupStore.setupStore.stagedIDs.contains(project.id) ? "Remove from setup list" : "Add to setup list") {
+                Button(setupStore.stagedIDs.contains(project.id) ? "Remove from setup list" : "Add to setup list") {
                     setupStore.toggle(project.id)
                 }
                 .buttonStyle(.borderedProminent)
