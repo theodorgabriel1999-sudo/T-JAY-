@@ -24,7 +24,8 @@ struct AIStoreView: View {
     @State private var searchText = ""
     @State private var category = "All"
     @State private var selectedProject: AIProject?
-    @State private var stagedIDs: Set<String> = []
+    @StateObject private var setupStore = ProjectSetupStore()
+    @State private var planProject: AIProject?
     @State private var loadError: String?
 
     private let hardware = HardwareChecker.inspect()
@@ -40,7 +41,7 @@ struct AIStoreView: View {
                 project.name.localizedCaseInsensitiveContains(searchText) ||
                 project.summary.localizedCaseInsensitiveContains(searchText) ||
                 project.capabilities.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            let matchesSection = section != .myAI || project.isKnownInstalled || stagedIDs.contains(project.id)
+            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.stagedIDs.contains(project.id)
             return matchesCategory && matchesSearch && matchesSection
         }
     }
@@ -111,14 +112,14 @@ struct AIStoreView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header(eyebrow: "YOUR WORKSTATION", title: "My AI",
                        subtitle: "Your installed and selected projects, each with its own UI and environment.")
-                if stagedIDs.isEmpty && projects.filter(\.isKnownInstalled).isEmpty {
+                if setupStore.stagedIDs.isEmpty && projects.filter(\.isKnownInstalled).isEmpty {
                     ContentUnavailableView("Nothing added yet", systemImage: "square.grid.2x2",
                                             description: Text("Explore Discover and add projects to your setup list."))
                 } else {
                     projectGrid
                 }
                 if !stagedIDs.isEmpty {
-                    Label("\(stagedIDs.count) project(s) in your setup list", systemImage: "list.bullet.clipboard")
+                    Label("\(setupStore.stagedIDs.count) project(s) in your setup list", systemImage: "list.bullet.clipboard")
                         .font(.subheadline.weight(.semibold))
                     Text("The setup list is a planning step in this build. Project-specific installation and launch adapters are not connected yet.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -294,6 +295,86 @@ struct AIStoreView: View {
         } catch {
             loadError = "Could not read the catalogue: \(error.localizedDescription)"
         }
+    }
+}
+
+
+struct InstallPlanSheet: View {
+    let project: AIProject
+    @Environment(\.dismiss) private var dismiss
+    private var plan: ProjectInstallPlan { ProjectInstallPlanner.makePlan(for: project) }
+    private var tools: [DetectedTool] { WorkstationToolDetector.detect() }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("INSTALLATION REVIEW").font(.caption.bold()).tracking(1.3).foregroundStyle(.cyan)
+                    Text(project.name).font(.largeTitle.bold())
+                }
+                Spacer()
+                Button("Close") { dismiss() }
+            }
+            if plan.canInstall {
+                Label("Ready for verification", systemImage: "checkmark.seal")
+                    .foregroundStyle(.green).font(.headline)
+            } else {
+                Label("Installation blocked pending verification", systemImage: "lock.fill")
+                    .foregroundStyle(.orange).font(.headline)
+            }
+            GroupBox("Host tools detected") {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(tools) { tool in
+                        HStack {
+                            Image(systemName: tool.isAvailable ? "checkmark.circle.fill" : "minus.circle")
+                                .foregroundStyle(tool.isAvailable ? .green : .secondary)
+                            Text(tool.displayName)
+                            Spacer()
+                            Text(tool.executablePath ?? "Not detected")
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    }
+                }
+            }
+            if !plan.blockers.isEmpty {
+                GroupBox("Why installation is blocked") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(plan.blockers, id: \.self) { item in
+                            Label(item, systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.orange).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            if !plan.warnings.isEmpty {
+                GroupBox("Review before proceeding") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(plan.warnings, id: \.self) { item in
+                            Label(item, systemImage: "info.circle")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            GroupBox("Planned workflow — no commands run") {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(plan.actions.enumerated()), id: \.offset) { index, action in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("\(index + 1).").foregroundStyle(.secondary).monospacedDigit()
+                            Text(action).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+            Text("JARVIS will not run install scripts, change system dependencies, or modify agent configuration until a pinned release, compatibility checks, and an explicit approval flow are implemented.")
+                .font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Spacer()
+                Button("Close review") { dismiss() }.buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(24)
     }
 }
 
