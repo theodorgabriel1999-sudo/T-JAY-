@@ -409,7 +409,7 @@ struct InstallPlanSheet: View {
                 Label("Ready for verification", systemImage: "checkmark.seal")
                     .foregroundStyle(.green).font(.headline)
             } else {
-                Label("Installation blocked pending verification", systemImage: "lock.fill")
+                Label(plan.canFetchSource ? "Runtime installation blocked; source checkout available" : "Installation blocked pending verification", systemImage: "lock.fill")
                     .foregroundStyle(.orange).font(.headline)
             }
             GroupBox("Host tools detected") {
@@ -478,7 +478,7 @@ struct InstallPlanSheet: View {
                             downloadFailed = false
                             do {
                                 let location = try await ProjectSourceInstaller.downloadPinnedSource(for: project)
-                                downloadMessage = "Pinned source downloaded to: \\(location.path)"
+                                downloadMessage = "Pinned source downloaded to: \(location.path)"
                             } catch {
                                 downloadFailed = true
                                 downloadMessage = error.localizedDescription
