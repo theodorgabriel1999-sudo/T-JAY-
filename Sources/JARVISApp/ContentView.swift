@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    var onOpenWorkstation: () -> Void = {}
     @EnvironmentObject private var vm: InstallerViewModel
     @State private var showPlan = false
     private let thermalTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
@@ -15,10 +16,14 @@ struct ContentView: View {
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("JARVIS AI WORKSTATION").font(.caption.bold()).tracking(2).foregroundStyle(.cyan)
-                        Text("Your local AI command center").font(.largeTitle.bold())
-                        Text("A cautious, observable setup for your Apple Silicon Mac.").foregroundStyle(.secondary)
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("JARVIS AI WORKSTATION").font(.caption.bold()).tracking(2).foregroundStyle(.cyan)
+                            Text("Setup & maintenance").font(.largeTitle.bold())
+                            Text("A cautious, observable setup for your Apple Silicon Mac.").foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Open Workstation") { onOpenWorkstation() }.buttonStyle(.borderedProminent)
                     }
                     GroupBox("System compatibility") {
                         VStack(alignment: .leading, spacing: 6) {
