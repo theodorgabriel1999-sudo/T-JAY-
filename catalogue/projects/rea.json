@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "rea",
+  "name": "REA — Reverse Engineer Anything",
+  "publisher": "morluto",
+  "category": "reverse-engineering",
+  "capabilities": ["mcp-server", "agent-assisted-reverse-engineering", "binary-analysis", "application-analysis", "runtime-behavior-analysis"],
+  "summary": "An MCP toolset for reverse engineering binaries, applications, and runtime behavior, designed to be used by supported coding agents.",
+  "source": "https://github.com/morluto/rea",
+  "website": "https://rea.tools/",
+  "package": {"registry": "npm", "name": "rea-agents"},
+  "license": {"project": "MIT", "verification": "README badge and repository license should be rechecked against pinned release"},
+  "execution": "local-tooling-with-agent-provider",
+  "macOS": {"appleSilicon": "not yet tested by JARVIS", "minimum": "verify against pinned REA release", "verification": "needs-install-and-smoke-test"},
+  "dependencies": [
+    {"id": "nodejs", "required": true, "reason": "REA setup and npm package runner"},
+    {"id": "npm", "required": true, "reason": "npx setup flow"},
+    {"id": "supported-agent", "required": true, "reason": "REA registers MCP tools and workflow instructions with a supported agent"},
+    {"id": "ghidra", "required": false, "reason": "Only for relevant native/binary analysis workflows; verify per workflow"},
+    {"id": "java-jdk", "required": false, "reason": "Required by Ghidra, not a universal REA prerequisite"}
+  ],
+  "install": {
+    "suggestedCommand": "npx rea-agents setup",
+    "mode": "interactive-review-required",
+    "notes": [
+      "The upstream quick start requires Node.js and npm.",
+      "REA setup modifies supported agent configuration and adds MCP/workflow instructions.",
+      "Upstream states that setup presents changes for approval and backs up existing configuration.",
+      "Run package acquisition from a trusted directory outside the target project.",
+      "Keep the package-runner cache entry available when setup records that runtime path.",
+      "Restart the target agent after setup."
+    ],
+    "enabled": false,
+    "reason": "JARVIS must first implement command preview, user approval, config backup/restore, and a tested macOS adapter."
+  },
+  "launch": {"kind": "agent-mcp-integration", "notStandaloneUI": true},
+  "resourceClass": "workflow-dependent",
+  "cost": {"software": "MIT-licensed project", "modelsAndProviders": "may require a separately configured agent/model provider; usage may incur fees"},
+  "permissionsToReview": ["read/write selected agent configuration", "execute local analysis tools", "read user-selected target files", "network access for package acquisition and configured providers"],
+  "healthChecks": ["package version resolves", "MCP server starts", "supported agent discovers REA tools", "smoke-test a safe sample target"],
+  "reviewRequired": true,
+  "status": "catalogue-entry-not-install-tested"
+}
