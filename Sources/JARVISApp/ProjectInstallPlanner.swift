@@ -161,16 +161,19 @@ enum ProjectSourceInstaller {
         }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
-        return try await Task.detached(priority: .utility) {
+        let sourceURL = project.source.absoluteString
+        let destinationPath = destination.path
+        let checkedOutPath = try await Task.detached(priority: .utility) {
             do {
-                try runGit(["clone", "--filter=blob:none", "--no-checkout", project.source.absoluteString, destination.path])
-                try runGit(["-C", destination.path, "checkout", "--detach", commit])
-                return destination
+                try runGit(["clone", "--filter=blob:none", "--no-checkout", sourceURL, destinationPath])
+                try runGit(["-C", destinationPath, "checkout", "--detach", commit])
+                return destinationPath
             } catch {
-                try? FileManager.default.removeItem(at: destination)
+                try? FileManager.default.removeItem(atPath: destinationPath)
                 throw error
             }
         }.value
+        return URL(fileURLWithPath: checkedOutPath)
     }
 
     private static func runGit(_ arguments: [String]) throws {
