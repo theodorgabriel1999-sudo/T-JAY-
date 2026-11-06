@@ -385,6 +385,9 @@ struct AIStoreView: View {
 struct InstallPlanSheet: View {
     let project: AIProject
     @Environment(\.dismiss) private var dismiss
+    @State private var isDownloading = false
+    @State private var downloadMessage: String?
+    @State private var downloadFailed = false
     private var plan: ProjectInstallPlan { ProjectInstallPlanner.makePlan(for: project) }
     private var tools: [DetectedTool] { WorkstationToolDetector.detect() }
 
@@ -452,12 +455,46 @@ struct InstallPlanSheet: View {
                     }
                 }
             }
+            if let downloadMessage {
+                GroupBox("Source download result") {
+                    Label(downloadMessage, systemImage: downloadFailed ? "exclamationmark.triangle" : "checkmark.circle.fill")
+                        .foregroundStyle(downloadFailed ? .orange : .green)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+            }
             Spacer(minLength: 0)
-            Text("JARVIS will not run install scripts, change system dependencies, or modify agent configuration until a pinned release, compatibility checks, and an explicit approval flow are implemented.")
+            Text("This downloads only the exact pinned source revision. It does not run setup scripts, install dependencies, launch the project, or change shared tools. This is a source checkout, not a complete application installation.")
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
                 Spacer()
-                Button("Close review") { dismiss() }.buttonStyle(.borderedProminent)
+                Button("Close review") { dismiss() }.buttonStyle(.bordered)
+                if !project.isKnownInstalled {
+                    Button {
+                        Task {
+                            isDownloading = true
+                            downloadMessage = nil
+                            downloadFailed = false
+                            do {
+                                let location = try await ProjectSourceInstaller.downloadPinnedSource(for: project)
+                                downloadMessage = "Pinned source downloaded to: \\(location.path)"
+                            } catch {
+                                downloadFailed = true
+                                downloadMessage = error.localizedDescription
+                            }
+                            isDownloading = false
+                        }
+                    } label: {
+                        if isDownloading {
+                            ProgressView().controlSize(.small)
+                            Text("Downloading…")
+                        } else {
+                            Text(plan.canFetchSource ? "Download pinned source" : "Source download unavailable")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isDownloading || !plan.canFetchSource)
+                }
             }
         }
         .padding(24)
