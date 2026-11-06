@@ -6,7 +6,7 @@ struct AIStoreView: View {
         case myAI = "My AI"
         case connections = "Connections"
         case dependencies = "Dependencies"
-        case activity = "Activity"
+        case activity = "Activity"\n        case health = "System Health"
         var id: String { rawValue }
         var symbol: String {
             switch self {
@@ -14,7 +14,7 @@ struct AIStoreView: View {
             case .myAI: "square.grid.2x2"
             case .connections: "point.3.connected.trianglepath.dotted"
             case .dependencies: "shippingbox"
-            case .activity: "clock.arrow.circlepath"
+            case .activity: "clock.arrow.circlepath"\n            case .health: "waveform.path.ecg"
             }
         }
     }
@@ -72,7 +72,7 @@ struct AIStoreView: View {
                 case .discover: discoverPage
                 case .myAI: myAIPage
                 case .connections: informationPage("Connections", subtitle: "Connect local runtimes and external providers.", items: ["Ollama · local runtime detected by the existing workstation", "API providers · configure per project, with cost and privacy disclosures", "MCP integrations · approve each server and permission separately"])
-                case .dependencies: informationPage("Dependencies", subtitle: "Shared tools are detected and reused; they are not installed all at once.", items: ["Git · source control", "Python + uv · isolated Python environments", "Node.js + npm · agent and JavaScript projects", "Java JDK · Ghidra", "FFmpeg · media workflows", "CMake + Xcode Command Line Tools · native builds"])
+                case .dependencies: dependenciesPage\n                case .health: healthPage
                 case .activity: informationPage("Activity", subtitle: "Installation history and diagnostics will appear here when project adapters are connected.", items: ["No marketplace installation has been run from this screen."])
                 }
             }
@@ -130,6 +130,64 @@ struct AIStoreView: View {
                 }
             }.padding(28)
         }
+    }
+
+    private var dependenciesPage: some View {
+        let tools = WorkstationToolDetector.detect()
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                header(eyebrow: "SHARED RUNTIMES", title: "Dependencies",
+                       subtitle: "Read-only detection. JARVIS reuses compatible tools and will ask before installing or changing any dependency.")
+                ForEach(tools) { tool in
+                    HStack(spacing: 12) {
+                        Image(systemName: tool.isAvailable ? "checkmark.circle.fill" : "circle.dashed")
+                            .foregroundStyle(tool.isAvailable ? .green : .secondary)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(tool.displayName).font(.headline)
+                            Text(tool.executablePath ?? "Not detected")
+                                .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                        }
+                        Spacer()
+                        Text(tool.isAvailable ? "Detected" : "Missing")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(tool.isAvailable ? .green : .secondary)
+                    }
+                    .padding(12)
+                    .background(.background, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.quaternary))
+                }
+                Text("Detection checks known executable locations only. A missing tool is not installed automatically.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }.padding(28)
+        }
+    }
+
+    private var healthPage: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            header(eyebrow: "DEVICE STATUS", title: "System Health",
+                   subtitle: "A snapshot of the Mac before resource-intensive project installs.")
+            GroupBox("Hardware") {
+                VStack(alignment: .leading, spacing: 8) {
+                    detailRow("Chip", hardware.chip)
+                    detailRow("Architecture", hardware.architecture)
+                    detailRow("macOS", hardware.macOS)
+                    detailRow("Memory", "\\(hardware.memoryGB) GB")
+                    detailRow("Free disk", "\\(hardware.freeDiskGB) GB")
+                    detailRow("Thermal state", HardwareChecker.thermalStateDescription)
+                }
+            }
+            if !hardware.notes.isEmpty {
+                GroupBox("Recommendations") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(hardware.notes, id: \\.self) { note in
+                            Label(note, systemImage: "info.circle")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            Spacer()
+        }.padding(28)
     }
 
     private var categoryPicker: some View {
