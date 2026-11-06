@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "openhands",
+  "name": "OpenHands",
+  "category": "coding",
+  "capabilities": [
+    "coding-agent",
+    "software-engineering-agent",
+    "terminal-tool-use"
+  ],
+  "summary": "Open-source software development agent for working on codebases and engineering tasks.",
+  "source": "https://github.com/All-Hands-AI/OpenHands",
+  "license": {
+    "project": "verify-current-release-license"
+  },
+  "execution": "local-or-hybrid",
+  "dependencies": [
+    {
+      "id": "docker-or-supported-sandbox",
+      "required": true
+    },
+    {
+      "id": "configured-model-provider",
+      "required": true
+    },
+    {
+      "id": "git",
+      "required": true
+    }
+  ],
+  "macOS": {
+    "appleSilicon": "needs-current-version-test",
+    "verification": "research-required"
+  },
+  "launch": {
+    "kind": "local-web-ui-or-cli",
+    "discovery": "project-specific"
+  },
+  "resourceClass": "resource-heavy",
+  "cost": {
+    "software": "review project license",
+    "modelProvider": "API or local inference resource requirements may apply"
+  },
+  "status": "catalogue-candidate-needs-review",
+  "reviewRequired": true
+}
