@@ -43,7 +43,7 @@ struct AIStoreView: View {
                 project.name.localizedCaseInsensitiveContains(searchText) ||
                 project.summary.localizedCaseInsensitiveContains(searchText) ||
                 project.capabilities.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.stagedIDs.contains(project.id)
+            let matchesSection = section != .myAI || project.isKnownInstalled || setupStore.setupStore.stagedIDs.contains(project.id)
             return matchesCategory && matchesSearch && matchesSection
         }
     }
@@ -125,7 +125,7 @@ struct AIStoreView: View {
                 } else {
                     projectGrid
                 }
-                if !stagedIDs.isEmpty {
+                if !setupStore.stagedIDs.isEmpty {
                     Label("\(setupStore.stagedIDs.count) project(s) in your setup list", systemImage: "list.bullet.clipboard")
                         .font(.subheadline.weight(.semibold))
                     Text("The setup list is a planning step in this build. Project-specific installation and launch adapters are not connected yet.")
@@ -290,7 +290,7 @@ struct AIStoreView: View {
             }
             Spacer(minLength: 4)
             HStack {
-                Button(setupStore.stagedIDs.contains(project.id) ? "Remove from setup list" : "Add to setup list") {
+                Button(setupStore.setupStore.stagedIDs.contains(project.id) ? "Remove from setup list" : "Add to setup list") {
                     setupStore.toggle(project.id)
                 }
                 .buttonStyle(.borderedProminent)
@@ -334,7 +334,7 @@ struct AIStoreView: View {
     }
 
     private func statusLabel(_ project: AIProject) -> some View {
-        let label = project.isKnownInstalled ? "Detected" : (stagedIDs.contains(project.id) ? "In setup list" : "Available")
+        let label = project.isKnownInstalled ? "Detected" : (setupStore.stagedIDs.contains(project.id) ? "In setup list" : "Available")
         return Text(label).font(.caption2.weight(.semibold))
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(.quaternary, in: Capsule())
