@@ -34,4 +34,5 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 PLIST
 test -x "$APP/Contents/MacOS/JARVISAIWorkstation"
 test -f "$APP/Contents/Resources/components.json"
+test -f "$APP/Contents/Resources/ai-project-catalog.json"
 step "Application bundle created: $APP"
