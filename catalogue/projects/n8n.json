@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "n8n",
+  "name": "n8n",
+  "category": "automation",
+  "capabilities": [
+    "workflow-automation",
+    "service-integrations",
+    "webhooks",
+    "agent-workflows"
+  ],
+  "summary": "Workflow automation platform with a broad integration ecosystem and AI workflow capabilities.",
+  "source": "https://github.com/n8n-io/n8n",
+  "website": "https://n8n.io/",
+  "license": {
+    "project": "Sustainable Use License / fair-code; source-available, not OSI-approved open source"
+  },
+  "execution": "local-or-hosted-service",
+  "dependencies": [
+    {
+      "id": "nodejs-or-container-runtime",
+      "required": true
+    },
+    {
+      "id": "database",
+      "required": "deployment-dependent"
+    }
+  ],
+  "macOS": {
+    "appleSilicon": "needs-current-version-test",
+    "verification": "research-required"
+  },
+  "launch": {
+    "kind": "local-web-ui"
+  },
+  "resourceClass": "moderate",
+  "cost": {
+    "software": "self-hosted use subject to license terms",
+    "externalIntegrations": "some connected services require paid plans or API usage"
+  },
+  "status": "catalogue-candidate-license-review-required",
+  "reviewRequired": true
+}
