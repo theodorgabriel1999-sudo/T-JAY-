@@ -171,7 +171,7 @@ final class LocalAssistant: ObservableObject {
     }
 }
 
-private struct LocalChatMessage: Identifiable {
+struct LocalChatMessage: Identifiable {
     let id = UUID()
     let role: String
     let content: String
@@ -183,5 +183,5 @@ private struct OllamaChatRequest: Encodable {
     let messages: [OllamaChatTurn]
     let stream: Bool
 }
-private struct OllamaChatTurn: Encodable { let role: String; let content: String }
+private struct OllamaChatTurn: Codable { let role: String; let content: String }
 private struct OllamaChatResponse: Decodable { let message: OllamaChatTurn }
