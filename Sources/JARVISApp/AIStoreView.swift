@@ -82,6 +82,10 @@ struct AIStoreView: View {
             projectDetail(project)
                 .frame(minWidth: 560, minHeight: 560)
         }
+        .sheet(item: $planProject) { project in
+            InstallPlanSheet(project: project)
+                .frame(minWidth: 560, minHeight: 620)
+        }
         .task { loadCatalog() }
         .tint(.cyan)
     }
@@ -222,17 +226,18 @@ struct AIStoreView: View {
             }
             Spacer(minLength: 4)
             HStack {
-                Button(stagedIDs.contains(project.id) ? "Added to setup list" : "Add to setup list") {
-                    if stagedIDs.contains(project.id) { stagedIDs.remove(project.id) }
-                    else { stagedIDs.insert(project.id) }
+                Button(setupStore.stagedIDs.contains(project.id) ? "Remove from setup list" : "Add to setup list") {
+                    setupStore.toggle(project.id)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(project.isKnownInstalled)
+                Button("Review install plan") { planProject = project }
+                    .buttonStyle(.bordered)
                 if project.isKnownInstalled {
                     Label("Already detected", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                 }
             }
-            Text("Adding a project here does not install it yet. JARVIS will show a reviewed installation plan before running any installer.")
+            Text("Adding a project only saves it to your setup list. Installation requires a separate, reviewed approval.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(24)
