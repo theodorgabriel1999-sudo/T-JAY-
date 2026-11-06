@@ -189,20 +189,23 @@
       },
       "resourceClass": "local-analysis-plus-agent-provider",
       "dependencies": [
-        "nodejs-supported-version",
-        "npm"
+        "nodejs-22.23.4-or-24.22.1-or-26.12.1-plus",
+        "npm-11.16.0"
       ],
       "optionalDependencies": [
         "ghidra",
         "hopper-or-ida"
       ],
-      "integrationNotes": "Upstream quick start documents npx rea-agents setup. Native analysis may use Ghidra, Hopper, IDA or Kuna; static JavaScript analysis does not require a native analysis engine. Review and back up selected agent configuration before applying setup changes. Do not auto-install proprietary tools.",
+      "integrationNotes": "Upstream package version 6.8.0 is pinned to commit 39827ec7171a311cd5258ffb1ef953068aa84051. Requires Node.js 22.23.4+, 24.22.1+, or 26.12.1+ and npm 11.16.0. Upstream quick start documents npx rea-agents setup. Setup asks the user to choose agents and approve configuration changes, with backups. Native analysis may use Ghidra, Hopper, IDA or Kuna; static JavaScript analysis needs no native analysis engine. JARVIS must not run the interactive setup automatically; review and back up selected agent configuration first. Do not auto-install proprietary tools.",
       "installStatus": "not-installed",
       "launch": {
         "kind": "agent-mcp-integration",
         "discovery": "setup-command-must-be-reviewed"
       },
-      "reviewRequired": true
+      "reviewRequired": true,
+      "upstreamVersion": "6.8.0",
+      "pinnedCommit": "39827ec7171a311cd5258ffb1ef953068aa84051",
+      "verifiedAt": "2026-11-06"
     },
     {
       "id": "jarvis-ai-assistant-user-project",
