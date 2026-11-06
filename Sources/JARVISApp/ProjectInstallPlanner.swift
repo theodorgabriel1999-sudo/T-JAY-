@@ -83,7 +83,7 @@ enum ProjectInstallPlanner {
         let actions = [
             "Create an isolated project directory at \(destination.path).",
             hasPinnedCommit
-                ? "Fetch exact upstream commit \\(project.pinnedCommit!)."
+                ? "Fetch exact upstream commit \(project.pinnedCommit!)."
                 : "Resolve and verify an immutable upstream release or commit before fetching.",
             "Review the upstream manifest and dependency install scripts before executing them.",
             "Create a project-specific environment; do not share Python or Node dependencies with other projects.",
