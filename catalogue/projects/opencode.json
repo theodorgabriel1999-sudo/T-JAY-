@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "opencode",
+  "name": "OpenCode",
+  "category": "coding",
+  "capabilities": [
+    "terminal-coding-agent",
+    "codebase-assistance",
+    "model-provider-routing"
+  ],
+  "summary": "Terminal-first coding agent that works with local or hosted model providers.",
+  "source": "https://github.com/anomalyco/opencode",
+  "license": {
+    "project": "verify-current-release-license"
+  },
+  "execution": "local-client-with-provider",
+  "dependencies": [
+    {
+      "id": "nodejs-supported-version",
+      "required": true
+    },
+    {
+      "id": "git",
+      "required": true
+    },
+    {
+      "id": "configured-model-provider",
+      "required": true
+    }
+  ],
+  "macOS": {
+    "appleSilicon": "needs-current-version-test",
+    "verification": "research-required"
+  },
+  "launch": {
+    "kind": "cli-or-terminal-ui"
+  },
+  "resourceClass": "provider-dependent",
+  "cost": {
+    "software": "review project license",
+    "modelProvider": "local model or paid/free-tier provider"
+  },
+  "status": "catalogue-candidate-needs-review",
+  "reviewRequired": true
+}
