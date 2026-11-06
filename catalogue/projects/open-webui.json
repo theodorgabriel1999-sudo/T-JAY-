@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "open-webui",
+  "name": "Open WebUI",
+  "category": "assistants",
+  "capabilities": [
+    "self-hosted-ai-interface",
+    "model-provider-connection",
+    "document-chat",
+    "rag"
+  ],
+  "summary": "Self-hosted interface for local and remote model providers, including Ollama-compatible workflows.",
+  "source": "https://github.com/open-webui/open-webui",
+  "website": "https://docs.openwebui.com/",
+  "license": {
+    "project": "verify-current-release-license"
+  },
+  "execution": "local-service",
+  "dependencies": [
+    {
+      "id": "python-or-container-runtime",
+      "required": true
+    },
+    {
+      "id": "ollama-or-compatible-provider",
+      "required": false
+    }
+  ],
+  "macOS": {
+    "appleSilicon": "needs-current-version-test",
+    "verification": "research-required"
+  },
+  "launch": {
+    "kind": "local-web-ui",
+    "discovery": "runtime-port"
+  },
+  "resourceClass": "moderate",
+  "cost": {
+    "software": "check current license and feature terms",
+    "modelsAndProviders": "provider/model costs may apply"
+  },
+  "status": "catalogue-candidate-needs-license-and-version-review",
+  "reviewRequired": true
+}
