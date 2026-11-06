@@ -26,6 +26,9 @@ struct AIProject: Decodable, Identifiable, Hashable {
     let installStatus: String?
     let launch: AIProjectLaunch?
     let reviewRequired: Bool?
+    let upstreamVersion: String?
+    let pinnedCommit: String?
+    let verifiedAt: String?
 
     var isKnownInstalled: Bool {
         installStatus == "already-installed-on-user-machine"
