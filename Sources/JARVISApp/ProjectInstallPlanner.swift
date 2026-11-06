@@ -10,6 +10,10 @@ struct ProjectInstallPlan {
     let warnings: [String]
 
     var canInstall: Bool { blockers.isEmpty }
+    var canFetchSource: Bool {
+        !projectID.isEmpty &&
+        !blockers.contains(where: { $0.localizedCaseInsensitiveContains("immutable commit") })
+    }
 }
 
 struct DetectedTool: Identifiable {
