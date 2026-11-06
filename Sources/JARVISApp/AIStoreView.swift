@@ -6,7 +6,8 @@ struct AIStoreView: View {
         case myAI = "My AI"
         case connections = "Connections"
         case dependencies = "Dependencies"
-        case activity = "Activity"\n        case health = "System Health"
+        case activity = "Activity"
+        case health = "System Health"
         var id: String { rawValue }
         var symbol: String {
             switch self {
@@ -14,7 +15,8 @@ struct AIStoreView: View {
             case .myAI: "square.grid.2x2"
             case .connections: "point.3.connected.trianglepath.dotted"
             case .dependencies: "shippingbox"
-            case .activity: "clock.arrow.circlepath"\n            case .health: "waveform.path.ecg"
+            case .activity: "clock.arrow.circlepath"
+            case .health: "waveform.path.ecg"
             }
         }
     }
@@ -72,7 +74,8 @@ struct AIStoreView: View {
                 case .discover: discoverPage
                 case .myAI: myAIPage
                 case .connections: informationPage("Connections", subtitle: "Connect local runtimes and external providers.", items: ["Ollama · local runtime detected by the existing workstation", "API providers · configure per project, with cost and privacy disclosures", "MCP integrations · approve each server and permission separately"])
-                case .dependencies: dependenciesPage\n                case .health: healthPage
+                case .dependencies: dependenciesPage
+                case .health: healthPage
                 case .activity: informationPage("Activity", subtitle: "Installation history and diagnostics will appear here when project adapters are connected.", items: ["No marketplace installation has been run from this screen."])
                 }
             }
@@ -171,15 +174,15 @@ struct AIStoreView: View {
                     detailRow("Chip", hardware.chip)
                     detailRow("Architecture", hardware.architecture)
                     detailRow("macOS", hardware.macOS)
-                    detailRow("Memory", "\\(hardware.memoryGB) GB")
-                    detailRow("Free disk", "\\(hardware.freeDiskGB) GB")
+                    detailRow("Memory", "\(hardware.memoryGB) GB")
+                    detailRow("Free disk", "\(hardware.freeDiskGB) GB")
                     detailRow("Thermal state", HardwareChecker.thermalStateDescription)
                 }
             }
             if !hardware.notes.isEmpty {
                 GroupBox("Recommendations") {
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(hardware.notes, id: \\.self) { note in
+                        ForEach(hardware.notes, id: \.self) { note in
                             Label(note, systemImage: "info.circle")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
