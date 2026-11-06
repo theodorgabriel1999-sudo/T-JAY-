@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 struct ProjectInstallPlan {
     let projectID: String
