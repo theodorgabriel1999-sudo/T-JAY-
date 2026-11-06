@@ -55,7 +55,10 @@ enum ProjectInstallPlanner {
         var blockers: [String] = []
         var warnings: [String] = []
 
-        blockers.append("This catalogue entry does not yet pin a verified upstream release or immutable commit. JARVIS will not install from a moving branch.")
+        let hasPinnedCommit = project.pinnedCommit?.range(of: "^[0-9a-f]{40}$", options: .regularExpression) != nil
+        if !hasPinnedCommit {
+            blockers.append("This catalogue entry does not yet pin a verified upstream release or immutable commit. JARVIS will not install from a moving branch.")
+        }
         if project.macOS?.appleSilicon == nil ||
             project.macOS?.appleSilicon?.localizedCaseInsensitiveContains("unverified") == true ||
             project.macOS?.appleSilicon?.localizedCaseInsensitiveContains("research") == true ||
@@ -79,7 +82,9 @@ enum ProjectInstallPlanner {
 
         let actions = [
             "Create an isolated project directory at \(destination.path).",
-            "Fetch only a verified, pinned upstream release or commit.",
+            hasPinnedCommit
+                ? "Fetch exact upstream commit \\(project.pinnedCommit!)."
+                : "Resolve and verify an immutable upstream release or commit before fetching.",
             "Review the upstream manifest and dependency install scripts before executing them.",
             "Create a project-specific environment; do not share Python or Node dependencies with other projects.",
             "Verify the installed version and register the project's original UI or launch command."
