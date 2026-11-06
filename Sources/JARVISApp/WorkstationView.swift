@@ -4,6 +4,7 @@ import Foundation
 struct WorkstationView: View {
     @StateObject private var assistant = LocalAssistant()
     @State private var prompt = ""
+    @FocusState private var promptIsFocused: Bool
 
     var body: some View {
         NavigationSplitView {
@@ -73,13 +74,28 @@ struct WorkstationView: View {
                 }
 
                 Divider()
-                HStack(alignment: .bottom) {
-                    TextField("Message JARVIS…", text: $prompt, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(1...5)
-                        .onSubmit { send() }
+                HStack(alignment: .bottom, spacing: 10) {
+                    ZStack(alignment: .topLeading) {
+                        if prompt.isEmpty {
+                            Text("Message JARVIS…")
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 13)
+                                .padding(.vertical, 12)
+                                .allowsHitTesting(false)
+                        }
+                        TextEditor(text: $prompt)
+                            .focused($promptIsFocused)
+                            .scrollContentBackground(.hidden)
+                            .frame(minHeight: 44, maxHeight: 110)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                    }
+                    .background(Color(nsColor: .textBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.secondary.opacity(0.25)))
                     Button {
                         send()
+                        promptIsFocused = true
                     } label: {
                         if assistant.isSending { ProgressView() }
                         else { Image(systemName: "arrow.up.circle.fill").font(.title2) }
@@ -91,7 +107,7 @@ struct WorkstationView: View {
             }
             .background(Color(nsColor: .windowBackgroundColor))
         }
-        .task { await assistant.refreshModels() }
+        .task { await assistant.refreshModels(); promptIsFocused = true }
         .onChange(of: assistant.showInstallerRequested) { _, requested in
             if requested { NotificationCenter.default.post(name: .jarvisShowInstaller, object: nil) }
         }
