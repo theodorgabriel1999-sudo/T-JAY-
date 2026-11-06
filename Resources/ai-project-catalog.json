@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "catalogueVersion": "0.1.0",
+  "status": "curated-development-catalogue",
+  "projects": [
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "category": "models",
+      "capabilities": [
+        "local-model-runtime",
+        "text-generation",
+        "embeddings"
+      ],
+      "summary": "Run local language models and expose a local API for compatible tools.",
+      "source": "https://github.com/ollama/ollama",
+      "website": "https://ollama.com",
+      "license": "MIT",
+      "licenseStatus": "open-source",
+      "execution": "local",
+      "macOS": {
+        "appleSilicon": "supported",
+        "minimum": "14",
+        "verification": "installed-on-user-machine"
+      },
+      "resourceClass": "model-dependent",
+      "dependencies": [],
+      "integrationNotes": "Can provide local inference to compatible clients through its local API.",
+      "installStatus": "already-installed-on-user-machine",
+      "launch": {
+        "kind": "existing-app-or-cli",
+        "url": "http://localhost:11434"
+      },
+      "reviewRequired": false
+    },
+    {
+      "id": "comfyui",
+      "name": "ComfyUI",
+      "category": "image-video",
+      "capabilities": [
+        "image-generation",
+        "image-workflows",
+        "video-workflows"
+      ],
+      "summary": "Node-based interface and backend for composable generative media workflows.",
+      "source": "https://github.com/comfyanonymous/ComfyUI",
+      "license": "GPL-3.0",
+      "licenseStatus": "open-source",
+      "execution": "local",
+      "macOS": {
+        "appleSilicon": "needs-version-and-workflow-verification",
+        "minimum": "not-yet-pinned",
+        "verification": "research-required"
+      },
+      "resourceClass": "resource-heavy",
+      "dependencies": [
+        "python-environment",
+        "pytorch-mps-where-supported",
+        "model-weights"
+      ],
+      "integrationNotes": "Only advertise specific client connections after the relevant API or adapter is tested.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "local-web-ui",
+        "discovery": "project-specific"
+      },
+      "reviewRequired": true
+    },
+    {
+      "id": "whisper-cpp",
+      "name": "whisper.cpp",
+      "category": "voice-audio",
+      "capabilities": [
+        "speech-to-text",
+        "transcription",
+        "local-audio-processing"
+      ],
+      "summary": "C/C++ implementation of Whisper for local speech recognition.",
+      "source": "https://github.com/ggml-org/whisper.cpp",
+      "license": "MIT",
+      "licenseStatus": "open-source",
+      "execution": "local",
+      "macOS": {
+        "appleSilicon": "supported-project-target-needs-build-test",
+        "minimum": "not-yet-pinned",
+        "verification": "research-required"
+      },
+      "resourceClass": "model-dependent",
+      "dependencies": [
+        "cmake-or-project-build-system",
+        "model-weights"
+      ],
+      "integrationNotes": "Can provide transcription output to compatible workflows; validate input/output adapters.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "cli-or-service",
+        "discovery": "project-specific"
+      },
+      "reviewRequired": true
+    },
+    {
+      "id": "openclaw",
+      "name": "OpenClaw",
+      "category": "agents",
+      "capabilities": [
+        "personal-agent",
+        "tool-use",
+        "automation",
+        "integrations"
+      ],
+      "summary": "Self-hosted agent gateway with its own control UI, channels, tools, and plugin ecosystem.",
+      "source": "https://github.com/openclaw/openclaw",
+      "website": "https://docs.openclaw.ai/",
+      "license": "MIT",
+      "licenseStatus": "open-source",
+      "execution": "local-or-hybrid",
+      "macOS": {
+        "appleSilicon": "supported-project-platform",
+        "minimum": "verify-current-release",
+        "verification": "documentation-reviewed"
+      },
+      "resourceClass": "model-and-agent-dependent",
+      "dependencies": [
+        "nodejs-supported-version",
+        "configured-model-provider"
+      ],
+      "integrationNotes": "Keep OpenClaw's own UI and plugin system. JARVIS should launch and manage it, not replace its UI.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "native-app-or-local-control-ui",
+        "discovery": "project-specific"
+      },
+      "reviewRequired": true
+    },
+    {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "category": "reverse-engineering",
+      "capabilities": [
+        "disassembly",
+        "decompilation",
+        "binary-analysis",
+        "debugging"
+      ],
+      "summary": "Software reverse-engineering framework developed by the NSA.",
+      "source": "https://github.com/NationalSecurityAgency/ghidra",
+      "license": "Apache-2.0",
+      "licenseStatus": "open-source",
+      "execution": "local",
+      "macOS": {
+        "appleSilicon": "verify-current-release",
+        "minimum": "verify-current-release",
+        "verification": "research-required"
+      },
+      "resourceClass": "moderate-to-resource-heavy",
+      "dependencies": [
+        "compatible-java-jdk"
+      ],
+      "integrationNotes": "Treat Ghidra as an independent desktop application; optional scripting and agent integrations require explicit review.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "native-desktop-app",
+        "discovery": "project-specific"
+      },
+      "reviewRequired": true
+    },
+    {
+      "id": "rea",
+      "name": "REA — Reverse Engineer Anything",
+      "category": "reverse-engineering",
+      "capabilities": [
+        "agent-assisted-reverse-engineering",
+        "binary-analysis",
+        "javascript-electron-analysis",
+        "dotnet-analysis",
+        "website-analysis",
+        "mcp-tools"
+      ],
+      "summary": "MCP toolset and agent workflows for analyzing native binaries, JavaScript/Electron apps, .NET assemblies, and websites. Connects an existing agent to specialist analysis tools; it is not a standalone reverse-engineering GUI.",
+      "source": "https://github.com/morluto/rea",
+      "website": "https://rea.tools/",
+      "license": "MIT",
+      "licenseStatus": "repository-license-declared-verify-package-and-tool-terms",
+      "execution": "local-agent-integration",
+      "macOS": {
+        "appleSilicon": "candidate-requires-install-test",
+        "minimum": "verify-current-release",
+        "verification": "README-reviewed-2026-11-06"
+      },
+      "resourceClass": "local-analysis-plus-agent-provider",
+      "dependencies": [
+        "nodejs-22.23.4-or-24.22.1-or-26.12.1-plus",
+        "npm-11.16.0"
+      ],
+      "optionalDependencies": [
+        "ghidra",
+        "hopper-or-ida"
+      ],
+      "integrationNotes": "Upstream package version 6.8.0 is pinned to commit 39827ec7171a311cd5258ffb1ef953068aa84051. Requires Node.js 22.23.4+, 24.22.1+, or 26.12.1+ and npm 11.16.0. Upstream quick start documents npx rea-agents setup. Setup asks the user to choose agents and approve configuration changes, with backups. Native analysis may use Ghidra, Hopper, IDA or Kuna; static JavaScript analysis needs no native analysis engine. JARVIS must not run the interactive setup automatically; review and back up selected agent configuration first. Do not auto-install proprietary tools.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "agent-mcp-integration",
+        "discovery": "setup-command-must-be-reviewed"
+      },
+      "reviewRequired": true,
+      "upstreamVersion": "6.8.0",
+      "pinnedCommit": "39827ec7171a311cd5258ffb1ef953068aa84051",
+      "verifiedAt": "2026-11-06"
+    },
+    {
+      "id": "jarvis-ai-assistant-user-project",
+      "name": "JARVIS AI Assistant",
+      "category": "assistants",
+      "capabilities": [
+        "voice-assistant",
+        "personal-assistant"
+      ],
+      "summary": "Independent assistant project supplied by the user. Preserve and launch its own UI.",
+      "source": "https://github.com/Avinashb722/jarvis-ai-assistant",
+      "license": "MIT (as declared by upstream README; verify LICENSE file at install time)",
+      "licenseStatus": "repository-claims-mit-verify-file",
+      "execution": "python-project-with-web-ui",
+      "macOS": {
+        "appleSilicon": "unverified",
+        "minimum": "Windows 10/11 listed as primary support; macOS unverified",
+        "verification": "README-reviewed-2026-11-06"
+      },
+      "resourceClass": "moderate-device-and-model-dependent",
+      "dependencies": [
+        "git",
+        "python-3.7-plus",
+        "isolated-python-environment"
+      ],
+      "integrationNotes": "Upstream README describes its own web UI, voice features, OpenCV face recognition, phone integration, Groq and Gemini APIs. Windows 10/11 is listed as primary support. Do not run install.bat on macOS. Preserve and launch its own UI; API providers may incur costs. Keep system and phone automation disabled until explicit approval.",
+      "installStatus": "not-installed",
+      "launch": {
+        "kind": "unknown-until-reviewed"
+      },
+      "reviewRequired": true,
+      "optionalDependencies": [
+        "opencv",
+        "adb",
+        "camera",
+        "microphone"
+      ]
+    },
+    {
+      "id": "reverse-engineering-everything-user-project",
+      "name": "Reverse Engineering Everything",
+      "category": "reverse-engineering",
+      "capabilities": [
+        "reverse-engineering",
+        "agent-assisted-analysis"
+      ],
+      "summary": "Pending confirmation: the exact project intended by this label is the REA repository supplied by the user.",
+      "source": "https://github.com/morluto/rea",
+      "license": "MIT (REA repository)",
+      "licenseStatus": "repository-license-declared",
+      "execution": "local-agent-integration",
+      "macOS": {
+        "appleSilicon": "candidate-requires-install-test",
+        "minimum": "verify-current-release",
+        "verification": "source-confirmed-by-user"
+      },
+      "resourceClass": "local-analysis-plus-agent-provider",
+      "dependencies": [
+        "nodejs-supported-version",
+        "npm"
+      ],
+      "integrationNotes": "This entry is an alias to the confirmed REA repository, not a separate product. Avoid duplicate installation records; resolve it to the canonical rea project.",
+      "installStatus": "alias",
+      "launch": {
+        "kind": "alias",
+        "targetProjectID": "rea"
+      },
+      "reviewRequired": true
+    }
+  ]
+}

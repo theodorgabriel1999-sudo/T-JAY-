@@ -1,9 +1,9 @@
 name: macOS build validation
 on:
   push:
-    branches: [main, reliability-1.0.1, reliability-1.0.2]
+    branches: [main, reliability-1.0.2, ai-marketplace-v1]
   pull_request:
-    branches: [main]
+    branches: [main, reliability-1.0.2]
 jobs:
   build:
     runs-on: macos-14
@@ -14,5 +14,7 @@ jobs:
         run: swift --version
       - name: Validate component manifest
         run: python3 -m json.tool Resources/components.json >/dev/null
-      - name: Build release executable
-        run: swift build -c release
+      - name: Validate AI project catalogue
+        run: python3 -m json.tool Resources/ai-project-catalog.json >/dev/null
+      - name: Build and assemble macOS app
+        run: bash scripts/build-app.sh
