@@ -73,7 +73,7 @@ struct AIStoreView: View {
                 switch section ?? .discover {
                 case .discover: discoverPage
                 case .myAI: myAIPage
-                case .connections: informationPage("Connections", subtitle: "Connect local runtimes and external providers.", items: ["Ollama · local runtime detected by the existing workstation", "API providers · configure per project, with cost and privacy disclosures", "MCP integrations · approve each server and permission separately"])
+                case .connections: connectionsPage
                 case .dependencies: dependenciesPage
                 case .health: healthPage
                 case .activity: informationPage("Activity", subtitle: "Installation history and diagnostics will appear here when project adapters are connected.", items: ["No marketplace installation has been run from this screen."])
@@ -131,6 +131,20 @@ struct AIStoreView: View {
                     Text("The setup list is a planning step in this build. Project-specific installation and launch adapters are not connected yet.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+            }.padding(28)
+        }
+    }
+
+    private var connectionsPage: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                header(eyebrow: "LOCAL RUNTIMES", title: "Connections",
+                       subtitle: "Check local model services and see which models are already available on this Mac.")
+                OllamaConnectionPanel()
+                informationPage("Other connections", subtitle: "External providers and agent integrations remain opt-in.", items: [
+                    "API providers · credentials should be stored in macOS Keychain, never in project files or logs",
+                    "MCP integrations · review each server and permission separately"
+                ])
             }.padding(28)
         }
     }
@@ -453,5 +467,93 @@ struct InstallPlanSheet: View {
 private extension AIProject {
     func capabilityLabel(_ value: String) -> String {
         value.replacingOccurrences(of: "-", with: " ").capitalized
+    }
+}
+
+
+private struct OllamaConnectionPanel: View {
+    private struct TagsResponse: Decodable {
+        let models: [Model]
+    }
+    private struct Model: Decodable, Identifiable {
+        let name: String
+        let size: Int64?
+        let modified_at: String?
+        var id: String { name }
+    }
+
+    @State private var models: [Model] = []
+    @State private var status = "Not checked"
+    @State private var isChecking = false
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Ollama", systemImage: "cpu")
+                        .font(.headline)
+                    Spacer()
+                    Text(status)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(status == "Connected" ? .green : .secondary)
+                }
+                Text("Local API · http://localhost:11434")
+                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                if isChecking {
+                    ProgressView("Checking local Ollama…")
+                } else if !models.isEmpty {
+                    ForEach(models) { model in
+                        HStack {
+                            Image(systemName: "cube")
+                                .foregroundStyle(.cyan)
+                            Text(model.name).font(.callout)
+                            Spacer()
+                            if let size = model.size {
+                                Text(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } else if status == "Connected" {
+                    Text("Ollama is running, but no models are downloaded yet.")
+                        .font(.callout).foregroundStyle(.secondary)
+                } else {
+                    Text("Refresh to check whether the local Ollama service is running.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("Refresh status and models") { refresh() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isChecking)
+                    Link("Open local API", destination: URL(string: "http://localhost:11434")!)
+                        .font(.callout)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .task { refresh() }
+    }
+
+    private func refresh() {
+        guard !isChecking else { return }
+        isChecking = true
+        Task {
+            defer { isChecking = false }
+            do {
+                let url = URL(string: "http://localhost:11434/api/tags")!
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 3
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                    throw URLError(.badServerResponse)
+                }
+                let result = try JSONDecoder().decode(TagsResponse.self, from: data)
+                models = result.models
+                status = "Connected"
+            } catch {
+                models = []
+                status = "Offline"
+            }
+        }
     }
 }
