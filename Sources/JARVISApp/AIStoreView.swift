@@ -268,6 +268,9 @@ struct AIStoreView: View {
                     detailRow("Resource use", project.resourceClass ?? "Not measured")
                     detailRow("Execution", project.execution)
                     detailRow("License", project.license)
+                    detailRow("Upstream version", project.upstreamVersion ?? "Not pinned")
+                    detailRow("Pinned commit", project.pinnedCommit.map { String($0.prefix(12)) } ?? "Not pinned")
+                    detailRow("Verified", project.verifiedAt ?? "Not recorded")
                     detailRow("Dependencies", project.dependencies.joined(separator: ", ").isEmpty ? "None listed" : project.dependencies.joined(separator: ", "))
                     if let optional = project.optionalDependencies, !optional.isEmpty {
                         detailRow("Optional", optional.joined(separator: ", "))
