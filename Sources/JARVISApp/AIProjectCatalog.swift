@@ -33,6 +33,16 @@ struct AIProject: Decodable, Identifiable, Hashable {
     var isKnownInstalled: Bool {
         installStatus == "already-installed-on-user-machine"
     }
+
+    var localSourceDirectory: URL? {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let directory = support
+            .appendingPathComponent("JARVIS AI Workstation/Projects", isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+        return FileManager.default.fileExists(atPath: directory.appendingPathComponent(".git").path) ? directory : nil
+    }
+
+    var isSourceCheckedOut: Bool { localSourceDirectory != nil }
 }
 
 struct AIProjectMacOS: Decodable, Hashable {
