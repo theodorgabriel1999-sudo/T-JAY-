@@ -381,7 +381,10 @@ struct InstallPlanSheet: View {
                 Spacer()
                 Button("Close") { dismiss() }
             }
-            if plan.canInstall {
+            if project.isKnownInstalled {
+                Label("Already detected on this Mac", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green).font(.headline)
+            } else if plan.canInstall {
                 Label("Ready for verification", systemImage: "checkmark.seal")
                     .foregroundStyle(.green).font(.headline)
             } else {
